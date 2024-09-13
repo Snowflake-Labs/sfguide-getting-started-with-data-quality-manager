@@ -17,7 +17,7 @@ from src.metrics_alert_monitoring import table_metrics
 from dotenv import load_dotenv
 
 # Add all databases you wish the access to this array
-st.session_state.databases = ["HART_DB","DM_FDP","DM_FDP_UAT_2","STANDARDIZED","DATAHUB"]
+st.session_state.databases = ["DATA_QUALITY"]
 
 load_dotenv(override=True)
 st.session_state["streamlit_mode"] = "SiS"
@@ -126,7 +126,7 @@ pages = [Main_Page(), Schedule_Check_Page(),MetricsPage(), table_metrics(), Job_
 
 with st.sidebar:
     
-    if st.button("Notification Page", key='dfgs', use_container_width=True):
+    if st.button("Notification Page", key='notification_page', use_container_width=True):
         st.session_state.current_page = 'not_page'
         st.rerun()
     if st.button("Data Quality Checks", key='dataquality_check', use_container_width=True):
