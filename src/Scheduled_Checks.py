@@ -18,7 +18,7 @@ from ast import literal_eval
 
 from src.Page import Page
 from src.globals import APP_OPP_DB, APP_CONFIG_SCHEMA, APP_TEMP_DATA_SCHEMA, APP_RESULTS_SCHEMA, APP_DATA_SCHEMA, dates_chron_dict, reverse_chron_dict
-from src.tools import toggle_button, get_tables, get_schemas, get_anomaly_chart, change_page, print_nsc_results, pag_up, pag_down
+from src.tools import toggle_button, get_tables, get_schemas, get_anomaly_chart, change_page, print_nsc_results, pag_up, pag_down, sql_to_dataframe, sql_to_pandas
 from src.Paginator import paginator
 
 class ScheduledChecksPage(Page):
@@ -35,7 +35,7 @@ class ScheduledChecksPage(Page):
         session = st.session_state.session
 
         job_name = job[1]
-        session.sql(f"EXECUTE TASK {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.{job_name}_DQ_TASK").collect()
+        sql_to_dataframe(f"EXECUTE TASK {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.{job_name}_DQ_TASK")
 
     def print_page(self):
         session = st.session_state.session
@@ -51,8 +51,8 @@ class ScheduledChecksPage(Page):
         # fbdqc.selectbox("Filter by data quality check", ["All"], key="dqcfilterdqc")
         # button.write("20 checks scheduled")
 
-        jobs = session.sql(
-            f"SELECT * FROM {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.DQ_JOBS WHERE JOB_NAME ILIKE '%{job_search}%' or LABEL ILIKE '%{job_search}%' ORDER BY CREATE_DTTM DESC").collect()
+        jobs = sql_to_dataframe(
+            f"SELECT * FROM {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.DQ_JOBS WHERE JOB_NAME ILIKE '%{job_search}%' or LABEL ILIKE '%{job_search}%' ORDER BY CREATE_DTTM DESC")
         st.write("-------")
 
         # total_pages = int(len(jobs)/st.session_state.pag_interval)

@@ -18,7 +18,7 @@ from ast import literal_eval
 
 from src.Page import Page
 from src.globals import APP_OPP_DB, APP_CONFIG_SCHEMA, APP_TEMP_DATA_SCHEMA, APP_RESULTS_SCHEMA, APP_DATA_SCHEMA, dates_chron_dict, reverse_chron_dict
-from src.tools import toggle_button, get_tables, get_schemas, get_anomaly_chart, change_page, print_nsc_results, pag_up, pag_down
+from src.tools import toggle_button, get_tables, get_schemas, get_anomaly_chart, change_page, print_nsc_results, pag_up, pag_down, sql_to_dataframe, sql_to_pandas
 from src.Paginator import paginator
 
 class DQCheckPage(Page):
@@ -86,8 +86,8 @@ class DQCheckPage(Page):
                     table_columns = []
                     if chosen_table:
                         try:
-                            table_columns = session.sql(
-                                f"describe table {chosen_db}.{chosen_schema}.{chosen_table}").collect()
+                            table_columns = sql_to_dataframe(
+                                f"describe table {chosen_db}.{chosen_schema}.{chosen_table}")
                             table_columns = pd.DataFrame(table_columns)["name"]
                         except:
                             st.warning("You may not have access to the objects above")
@@ -133,10 +133,10 @@ class DQCheckPage(Page):
                         rc = st.checkbox("Row Count",key=f"{table}_row_check")
                         table_columns = []
                         try:
-                            table_columns = session.sql(
-                                f"describe table {chosen_db}.{chosen_schema}.{table}").collect()
-                            session.sql(f"SHOW COLUMNS IN TABLE {chosen_db}.{chosen_schema}.{table}").collect()
-                            column_data = session.sql('SELECT "column_name",LOWER(PARSE_JSON("data_type"):type::string) AS data_type FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))').to_pandas()
+                            table_columns = sql_to_dataframe(
+                                f"describe table {chosen_db}.{chosen_schema}.{table}")
+                            sql_to_dataframe(f"SHOW COLUMNS IN TABLE {chosen_db}.{chosen_schema}.{table}")
+                            column_data = sql_to_pandas('SELECT "column_name",LOWER(PARSE_JSON("data_type"):type::string) AS data_type FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))')
                             column_names = column_data["column_name"]
                         except:
                             st.warning("You may not have access to this object")
@@ -235,10 +235,10 @@ class DQCheckPage(Page):
                     table_columns = []
                     if chosen_table:
                         try:
-                            table_columns = session.sql(
-                                f"describe table {chosen_db}.{chosen_schema}.{chosen_table}").collect()
-                            session.sql(f"SHOW COLUMNS IN TABLE {chosen_db}.{chosen_schema}.{chosen_table}").collect()
-                            column_data = session.sql('SELECT "column_name",LOWER(PARSE_JSON("data_type"):type::string) AS data_type FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))').to_pandas()
+                            table_columns = sql_to_dataframe(
+                                f"describe table {chosen_db}.{chosen_schema}.{chosen_table}")
+                            sql_to_dataframe(f"SHOW COLUMNS IN TABLE {chosen_db}.{chosen_schema}.{chosen_table}")
+                            column_data = sql_to_pandas('SELECT "column_name",LOWER(PARSE_JSON("data_type"):type::string) AS data_type FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))')
                             column_names = column_data["column_name"]
                         except:
                             st.warning("You may not have access to the objects above")
@@ -381,8 +381,8 @@ class DQCheckPage(Page):
                     t_a_available_columns = []
                     if chosen_table:
                         try:
-                            t_a_available_columns = session.sql(
-                                f"describe table {chosen_db}.{chosen_schema}.{chosen_table}").collect()
+                            t_a_available_columns = sql_to_dataframe(
+                                f"describe table {chosen_db}.{chosen_schema}.{chosen_table}")
                             t_a_available_columns = pd.DataFrame(t_a_available_columns)["name"]
                         except:
                             st.warning("You may not have access to the objects above")
@@ -420,8 +420,8 @@ class DQCheckPage(Page):
                     t_b_available_columns = []
                     if chosen_b_table:
                         try:
-                            t_b_available_columns = session.sql(
-                                f"describe table {chosen_b_db}.{chosen_b_schema}.{chosen_b_table}").collect()
+                            t_b_available_columns = sql_to_dataframe(
+                                f"describe table {chosen_b_db}.{chosen_b_schema}.{chosen_b_table}")
                             t_b_available_columns = pd.DataFrame(t_b_available_columns)["name"]
                         except:
                             st.warning("You may not have access to the objects above")
@@ -740,8 +740,8 @@ class DQCheckPage(Page):
                     # anom_detect_output = { "JOB_ID": -1, "JOB_NAME": "", "PARTITION_COLUMNS": [ "CAT01", "CAT02" ], "QUALIFIED_RESULT_TBL_NM": "DATA_QUALITY.TEMPORARY_DQ_OBJECTS.TEMP_2024_01_31_13_12_04_ANOM_DETECT_RESULTS_5587", "RESULT_DB": "DATA_QUALITY", "RESULT_SCHEMA": "TEMPORARY_DQ_OBJECTS", "RESULT_TBL_NM": "TEMP_2024_01_31_13_12_04_ANOM_DETECT_RESULTS_5587", "UDTF_NM": "TEMPORARY_DQ_OBJECTS.perform_anom_detection_2024_01_31_13_12_04_udtf_5587" }
                     st.success("Check Run Successfully!")
                     results_table = json.loads(anom_detect_output)["RESULT_TBL_NM"]
-                    results = session.sql(
-                        f"SELECT *,(JOB_ID||'_'||RUN_DATETIME) AS RUN_KEY FROM {APP_OPP_DB}.{APP_TEMP_DATA_SCHEMA}.{results_table}").to_pandas()
+                    results = sql_to_pandas(
+                        f"SELECT *,(JOB_ID||'_'||RUN_DATETIME) AS RUN_KEY FROM {APP_OPP_DB}.{APP_TEMP_DATA_SCHEMA}.{results_table}")
                     st.write(results)
                     r_key = results["RUN_KEY"][0]
                     print_nsc_results(f"{APP_OPP_DB}.{APP_TEMP_DATA_SCHEMA}.{results_table}", r_key, 0)
@@ -798,8 +798,8 @@ class DQCheckPage(Page):
                 table_columns = []
                 if chosen_table:
                     try:
-                        table_columns = session.sql(
-                            f"describe table {chosen_db}.{chosen_schema}.{chosen_table}").collect()
+                        table_columns = sql_to_dataframe(
+                            f"describe table {chosen_db}.{chosen_schema}.{chosen_table}")
                         table_columns = pd.DataFrame(table_columns)["name"]
                     except:
                         st.warning("You may not have access to the objects above")
@@ -835,8 +835,8 @@ class DQCheckPage(Page):
                 # anom_detect_output = { "JOB_ID": -1, "JOB_NAME": "", "PARTITION_COLUMNS": [ "CAT01", "CAT02" ], "QUALIFIED_RESULT_TBL_NM": "DATA_QUALITY.TEMPORARY_DQ_OBJECTS.TEMP_2024_01_31_13_12_04_ANOM_DETECT_RESULTS_5587", "RESULT_DB": "DATA_QUALITY", "RESULT_SCHEMA": "TEMPORARY_DQ_OBJECTS", "RESULT_TBL_NM": "TEMP_2024_01_31_13_12_04_ANOM_DETECT_RESULTS_5587", "UDTF_NM": "TEMPORARY_DQ_OBJECTS.perform_anom_detection_2024_01_31_13_12_04_udtf_5587" }
                 st.success("Check Run Successfully!")
                 results_table = json.loads(anom_detect_output)["RESULT_TBL_NM"]
-                results = session.sql(
-                    f"SELECT *,(JOB_ID||'_'||RUN_DATETIME) AS RUN_KEY FROM {APP_OPP_DB}.{APP_TEMP_DATA_SCHEMA}.{results_table}").to_pandas()
+                results = sql_to_pandas(
+                    f"SELECT *,(JOB_ID||'_'||RUN_DATETIME) AS RUN_KEY FROM {APP_OPP_DB}.{APP_TEMP_DATA_SCHEMA}.{results_table}")
                 # st.write(results)
                 r_key = results["RUN_KEY"][0]
                 get_anomaly_chart(f"{APP_OPP_DB}.{APP_TEMP_DATA_SCHEMA}.{results_table}", r_key, 0)

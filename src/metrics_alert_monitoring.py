@@ -3,6 +3,7 @@ import pandas as pd
 import time
 
 from src.Page import Page
+from src.tools import sql_to_dataframe,sql_to_pandas
 from snowflake.snowpark.context import get_active_session
 
 class table_metrics(Page):
@@ -63,7 +64,7 @@ class table_metrics(Page):
                     LAST_MEASURED desc
                 """
             
-            METRICS = session.sql(METRICS_QUERY).collect()
+            METRICS = sql_to_dataframe(METRICS_QUERY)
             METRICS_DF = pd.DataFrame(METRICS)
             
             return METRICS_DF
@@ -77,7 +78,7 @@ class table_metrics(Page):
             return ['All'] + unique_values.tolist()
 
 
-        METRICS_COUNTER = session.sql("""
+        METRICS_COUNTER = sql_to_dataframe("""
                 with LATEST_METRIC as (
                     select
                         METRIC_NAME as QUALITY_CHECK,
@@ -109,7 +110,7 @@ class table_metrics(Page):
                     (select count(*) from LATEST_VALUE where VALUE > 0) as FAILED_METRICS
                 from
                     LATEST_VALUE
-                """).collect()
+                """)
         ALL_METRICS = str(METRICS_COUNTER[0].ALL_METRICS)
         FAILED_METRICS = str(METRICS_COUNTER[0].FAILED_METRICS)
 
@@ -164,7 +165,7 @@ class table_metrics(Page):
         st.warning('⚠️ Manual checks already work today but they are not (yet) logged in the Metrics History.')
 
         with st.expander('Show Metrics History'):
-            METRICS_HISTORY = session.sql("""
+            METRICS_HISTORY = sql_to_dataframe("""
                 select
                     to_char(convert_timezone('Europe/Berlin', MEASUREMENT_TIME), 'YYYY-MM-DD at HH:MI:SS') as MEASUREMENT_TIME,
                     case when METRIC_DATABASE = 'SNOWFLAKE' then concat('❄️ ', METRIC_NAME)
@@ -179,7 +180,7 @@ class table_metrics(Page):
                 order by 
                     MEASUREMENT_TIME desc 
                 limit 100
-                """).collect()
+                """)
             st.dataframe(METRICS_HISTORY, hide_index= True, use_container_width=True)
 
 

@@ -75,22 +75,8 @@ else:
     print("We are not in Snowflake.")
 
     st.session_state.session = st.connection("snowflake").session()
+
 session = st.session_state.session
-
-
-
-QUERY_TAG = {"origin": "sf_sit",
-             "name": "data_quality_solution",
-             "version": '{major: 1, minor: 0}'
-            }
-
-@st.cache_data
-def sql_to_dataframe(sql: str) -> pd.DataFrame:
-    return session.sql(sql).to_pandas(
-        statement_params={
-            "QUERY_TAG": json.dumps(QUERY_TAG)
-        }
-    )
 
 
 st.title("Data Quality Manager")

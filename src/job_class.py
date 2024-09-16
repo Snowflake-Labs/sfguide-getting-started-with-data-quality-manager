@@ -2,7 +2,7 @@ import streamlit as st
 import snowflake.snowpark.functions as F
 
 from snowflake.snowpark import types as T
-from src.tools import toggle_button, get_tables, get_schemas, get_anomaly_chart, change_page, print_nsc_results, pag_up, pag_down
+from src.tools import toggle_button, get_tables, get_schemas, get_anomaly_chart, change_page, print_nsc_results, pag_up, pag_down, sql_to_dataframe, sql_to_pandas
 from src.globals import APP_OPP_DB, APP_CONFIG_SCHEMA, APP_TEMP_DATA_SCHEMA, APP_RESULTS_SCHEMA, APP_DATA_SCHEMA, dates_chron_dict, reverse_chron_dict
 class Job:
     def __init__(self, note, job_info,i,emoji_flag):
@@ -88,8 +88,8 @@ class Job:
                 message = f'***{self.count} anomilies found in {self.table}***'
             description.write(f"{message}")
             if (st.session_state["show_flag" + str(self.note_id)]):
-                df = session.sql(
-                    f"SELECT * FROM {APP_OPP_DB}.{APP_RESULTS_SCHEMA}.DQ_ANOMALY_DETECT_RESULTS WHERE (JOB_ID||'_'||RUN_DATETIME) = '{self.note_id}' AND ALERT_FLAG=1").collect()
+                df = sql_to_dataframe(
+                    f"SELECT * FROM {APP_OPP_DB}.{APP_RESULTS_SCHEMA}.DQ_ANOMALY_DETECT_RESULTS WHERE (JOB_ID||'_'||RUN_DATETIME) = '{self.note_id}' AND ALERT_FLAG=1")
                 # df['PARTITION_VALUES'] = df["PARTITION_VALUES"].asself.type('string').replace('\\[','')
                 # df['PARTITION_STR'] = [row["PARTITION_VALUES"].split(',') for index,row in df.iterrows()]
                 edited_df = st.data_editor(df, key="editdf" + str(self.note_id) + str(self.i))
@@ -108,8 +108,8 @@ class Job:
                 message = f'***{self.count} alerts found in {self.table}***'
             description.write(f"{message}")
             if (st.session_state["show_flag" + str(self.note_id)]):
-                df = session.sql(
-                    f"SELECT * FROM {APP_OPP_DB}.{APP_RESULTS_SCHEMA}.DQ_NON_STAT_CHECK_RESULTS WHERE (JOB_ID||'_'||RUN_DATETIME) = '{self.note_id}' AND ALERT_FLAG=1").collect()
+                df = sql_to_dataframe(
+                    f"SELECT * FROM {APP_OPP_DB}.{APP_RESULTS_SCHEMA}.DQ_NON_STAT_CHECK_RESULTS WHERE (JOB_ID||'_'||RUN_DATETIME) = '{self.note_id}' AND ALERT_FLAG=1")
                 # df['PARTITION_STR'] = [row["PARTITION_VALUES"].split(',') for index,row in df.iterrows()]
                 edited_df = st.data_editor(df, key="editdf" + str(self.note_id) + str(self.i))
                 description.write(f'Table impacted: {self.table}')

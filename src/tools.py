@@ -17,6 +17,30 @@ from ast import literal_eval
 from src.Page import Page
 
 
+
+QUERY_TAG = {"origin": "sf_sit",
+             "name": "sit_data_quality_framework",
+             "version": '{major: 1, minor: 0}'
+            }
+
+
+def sql_to_dataframe(sql: str) -> pd.DataFrame:
+    session = st.session_state.session
+    return session.sql(sql).collect(
+        statement_params={
+            "QUERY_TAG": json.dumps(QUERY_TAG)
+        }
+    )
+
+
+def sql_to_pandas(sql: str) -> pd.DataFrame:
+    session = st.session_state.session
+    return session.sql(sql).to_pandas(
+        statement_params={
+            "QUERY_TAG": json.dumps(QUERY_TAG)
+        }
+    )
+
 def get_anomaly_chart(table,note_id,flag):
 
     session = st.session_state.session

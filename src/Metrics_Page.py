@@ -1,6 +1,6 @@
 import json
 
-from src.tools import toggle_button
+from src.tools import toggle_button, sql_to_pandas, sql_to_dataframe
 from src.Page import BasePage, set_page
 import streamlit as st
 import pandas as pd
@@ -13,7 +13,7 @@ class MetricsPage(BasePage):
     def print_page(self):
         session = st.session_state.session
 
-        dmf_jobs = session.sql("SELECT * FROM DATA_QUALITY.CONFIG.DQ_JOBS WHERE CHECK_CATEGORY = 'SNOWFLAKE_DMF';").to_pandas()
+        dmf_jobs = sql_to_pandas("SELECT * FROM DATA_QUALITY.CONFIG.DQ_JOBS WHERE CHECK_CATEGORY = 'SNOWFLAKE_DMF';")
 
         st.subheader("DMF jobs dashboard")
 
@@ -25,7 +25,7 @@ class MetricsPage(BasePage):
                     job_id = job["JOB_ID"]
                     st.write(f'Created By: {job["CREATE_BY"]}')
                     st.write(f'Active: {str(job["IS_ACTIVE"])}')
-                    results = session.sql(f"SELECT * FROM DATA_QUALITY.RESULTS.DQ_SNOWFLAKE_DMF_RESULTS WHERE JOB_ID = {job_id}").to_pandas()
+                    results = sql_to_pandas(f"SELECT * FROM DATA_QUALITY.RESULTS.DQ_SNOWFLAKE_DMF_RESULTS WHERE JOB_ID = {job_id}")
 
                     specs = json.loads(job["JOB_SPECS"])
 
@@ -59,7 +59,7 @@ class MetricsPage(BasePage):
                             df = pd.DataFrame(df_json)
                             st.line_chart(df, x="TIME", y=display_check)
         with metadata:
-            met_jobs = session.sql("SELECT * FROM QC_TESTING.QC.CONTROL_REPORT;").to_pandas()
+            met_jobs = sql_to_pandas("SELECT * FROM QC_TESTING.QC.CONTROL_REPORT;")
             st.write(met_jobs)
 
             for index, met_job in met_jobs.iterrows():
@@ -70,7 +70,7 @@ class MetricsPage(BasePage):
                         st.session_state["show_flag" + str(m_job_id)] = False
                     st.button("Show more", key="show" + str(m_job_id) + str(index), on_click=toggle_button,args=("show_flag" + str(m_job_id),), type="primary")
                     if (st.session_state["show_flag" + str(m_job_id)]):
-                        met_dict = session.sql(f"SELECT DISTINCT COLUMN_VALUE FROM QC_TESTING.QC.CONTROL_REPORT_RESULT where CONTROL_REPORT_ID = '{m_job_id}'").to_pandas()
+                        met_dict = sql_to_pandas(f"SELECT DISTINCT COLUMN_VALUE FROM QC_TESTING.QC.CONTROL_REPORT_RESULT where CONTROL_REPORT_ID = '{m_job_id}'")
                         keys_dict = {}
                         for index,row in met_dict.iterrows():
                             row_json = json.loads(row["COLUMN_VALUE"])
@@ -80,12 +80,12 @@ class MetricsPage(BasePage):
                                 keys_dict[key].append(value)
                         column = st.selectbox("Select Your Column",keys_dict.keys())
                         value = st.selectbox("Select Your Value",keys_dict[column])
-                        run_data = session.sql(f"""SELECT end_timestamp as time, COLUMN_CNT as count
+                        run_data = sql_to_pandas(f"""SELECT end_timestamp as time, COLUMN_CNT as count
                             FROM QC_TESTING.QC.CONTROL_REPORT_RESULT as cr_res 
                             JOIN QC_TESTING.QC.CONTROL_REPORT_RUN as cr_run on cr_res.control_report_run_id = cr_run.control_report_run_id 
                             where CONTROL_REPORT_ID = '{m_job_id}' 
                             and JSON_EXTRACT_PATH_TEXT(COLUMN_VALUE,'{column}') = '{value}'
-                            ORDER BY time;"""). to_pandas()
+                            ORDER BY time;""")
                         st.line_chart(run_data, x="TIME", y="COUNT")
                     st.write(met_job)
 
