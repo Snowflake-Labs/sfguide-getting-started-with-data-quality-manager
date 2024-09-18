@@ -67,6 +67,7 @@ class DQCheckPage(Page):
 
         if check_type =="Column Value Check":
             check_type = "Metadata Check"
+            st.session_state.session_check_type = check_type
             with st.expander("**Settings**", expanded=True):
                     one, two, three = st.columns(3)
                     chosen_db = one.selectbox("Select database", databases)
@@ -338,7 +339,7 @@ class DQCheckPage(Page):
                         checks.append("UNIQUE_COUNT")
                         thresholds.append(uc_t)
 
-                    specs["COLUMNS"].append({"COLUMN":column, "CHECKS":checks})
+                    specs["COLUMNS"].append({"COLUMN":column, "CHECKS":checks, "THRESHOLDS":thresholds})
 
 
                 # threshold = st.text_input("Threshold", placeholder="Enter Your Alert Threshold")

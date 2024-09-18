@@ -82,10 +82,10 @@ class Job_Edit_Page(Page):
     
     def toggle_task(self,check_name,action):
         if action == "START":
-            session.sql(f"alter task {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.{check_name}_DQ_TASK RESUME;").collect()
+            sql_to_dataframe(f"alter task {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.{check_name}_DQ_TASK RESUME;")
             st.success("Job started")
         elif action == "STOP":
-            session.sql(f"alter task {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.{check_name}_DQ_TASK SUSPEND;").collect()
+            sql_to_dataframe(f"alter task {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.{check_name}_DQ_TASK SUSPEND;")
             st.success("Job stopped")
     
     def print_page(self):

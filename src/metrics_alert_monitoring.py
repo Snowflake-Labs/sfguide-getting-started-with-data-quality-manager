@@ -131,8 +131,8 @@ class table_metrics(Page):
             dmf_table_options = []
 
 
-        dmf_name_filter = col1.selectbox('DMF', options=dmf_name_options, placeholder='All')
-        dmf_table_filter = col2.selectbox('Table', options=dmf_table_options, placeholder='All')
+        dmf_name_filter = col1.selectbox('DMF', options=dmf_name_options)
+        dmf_table_filter = col2.selectbox('Table', options=dmf_table_options)
         issues_found_filter = col3.selectbox('Expectations', options= ['Failed', 'All'])
 
 

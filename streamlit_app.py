@@ -14,6 +14,7 @@ from src.DQ_Check import DQCheckPage
 from src.Scheduled_Checks import ScheduledChecksPage
 from src.Metrics_Page import MetricsPage
 from src.metrics_alert_monitoring import table_metrics
+from src.Page import set_page
 from dotenv import load_dotenv
 
 # Add all databases you wish the access to this array
@@ -49,7 +50,7 @@ APP_RESULTS_SCHEMA = "RESULTS"
 APP_DATA_SCHEMA = "DATA"
 APP_TEMP_DATA_SCHEMA = "TEMPORARY_DQ_OBJECTS"
 st.session_state.pag_interval = 10
-st.session_state.warehouses = ["DQ_L"]
+st.session_state.warehouses = ["XSMALL","SMALL","MEDIUM","LARGE","XLARGE"]
 st.session_state.non_stat_proc='dq_non_stat_sproc'
 st.session_state.anomoly_proc='dq_anomaly_detection_sproc'
 
@@ -112,21 +113,15 @@ pages = [Main_Page(), Schedule_Check_Page(),MetricsPage(), table_metrics(), Job_
 
 with st.sidebar:
     
-    if st.button("Notification Page", key='notification_page', use_container_width=True):
-        st.session_state.current_page = 'not_page'
-        st.rerun()
-    if st.button("Data Quality Checks", key='dataquality_check', use_container_width=True):
-        st.session_state.current_page = 'dataquality_check'
-        st.rerun()
-    if st.button("Scheduled Checks", key='sched_checks', use_container_width=True):
-        st.session_state.current_page = 'sched_checks'
-        st.rerun()
-    if st.button("Manual DMF Metrics", key='metrics_page', use_container_width=True):
-        st.session_state.current_page = 'metrics_page'
-        st.rerun()
-    if st.button("Table DMF Metrics", key='table_metrics', use_container_width=True):
-        st.session_state.current_page = 'table_metrics'
-        st.rerun()
+    st.button("Notification Page", key='notification_page', use_container_width=True, on_click = set_page, args=('not_page',))
+
+    st.button("Data Quality Checks", key='dataquality_check', use_container_width=True, on_click = set_page, args=('dataquality_check',))
+
+    st.button("Scheduled Checks", key='sched_checks', use_container_width=True, on_click = set_page, args=('sched_checks',))
+ 
+    st.button("Manual DMF Metrics", key='metrics_page', use_container_width=True, on_click = set_page, args=('metrics_page',))
+
+    st.button("Table DMF Metrics", key='table_metrics', use_container_width=True, on_click = set_page, args=('table_metrics',))
 
 
 

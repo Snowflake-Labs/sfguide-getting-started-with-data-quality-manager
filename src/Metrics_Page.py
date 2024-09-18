@@ -4,7 +4,7 @@ from src.tools import toggle_button, sql_to_pandas, sql_to_dataframe
 from src.Page import BasePage, set_page
 import streamlit as st
 import pandas as pd
-
+from src.globals import APP_OPP_DB, APP_CONFIG_SCHEMA, APP_TEMP_DATA_SCHEMA, APP_RESULTS_SCHEMA, APP_DATA_SCHEMA
 
 class MetricsPage(BasePage):
     def __init__(self):
@@ -59,7 +59,7 @@ class MetricsPage(BasePage):
                             df = pd.DataFrame(df_json)
                             st.line_chart(df, x="TIME", y=display_check)
         with metadata:
-            met_jobs = sql_to_pandas("SELECT * FROM QC_TESTING.QC.CONTROL_REPORT;")
+            met_jobs = sql_to_pandas("SELECT * FROM DATA_QUALITY.CONFIG.CONTROL_REPORT;")
             st.write(met_jobs)
 
             for index, met_job in met_jobs.iterrows():
@@ -70,7 +70,7 @@ class MetricsPage(BasePage):
                         st.session_state["show_flag" + str(m_job_id)] = False
                     st.button("Show more", key="show" + str(m_job_id) + str(index), on_click=toggle_button,args=("show_flag" + str(m_job_id),), type="primary")
                     if (st.session_state["show_flag" + str(m_job_id)]):
-                        met_dict = sql_to_pandas(f"SELECT DISTINCT COLUMN_VALUE FROM QC_TESTING.QC.CONTROL_REPORT_RESULT where CONTROL_REPORT_ID = '{m_job_id}'")
+                        met_dict = sql_to_pandas(f"SELECT DISTINCT COLUMN_VALUE FROM DATA_QUALITY.RESULTS.CONTROL_REPORT_RESULT where CONTROL_REPORT_ID = '{m_job_id}'")
                         keys_dict = {}
                         for index,row in met_dict.iterrows():
                             row_json = json.loads(row["COLUMN_VALUE"])
@@ -81,8 +81,8 @@ class MetricsPage(BasePage):
                         column = st.selectbox("Select Your Column",keys_dict.keys())
                         value = st.selectbox("Select Your Value",keys_dict[column])
                         run_data = sql_to_pandas(f"""SELECT end_timestamp as time, COLUMN_CNT as count
-                            FROM QC_TESTING.QC.CONTROL_REPORT_RESULT as cr_res 
-                            JOIN QC_TESTING.QC.CONTROL_REPORT_RUN as cr_run on cr_res.control_report_run_id = cr_run.control_report_run_id 
+                            FROM DATA_QUALITY.RESULTS.CONTROL_REPORT_RESULT as cr_res 
+                            JOIN DATA_QUALITY.CONFIG.CONTROL_REPORT_RUN as cr_run on cr_res.control_report_run_id = cr_run.control_report_run_id 
                             where CONTROL_REPORT_ID = '{m_job_id}' 
                             and JSON_EXTRACT_PATH_TEXT(COLUMN_VALUE,'{column}') = '{value}'
                             ORDER BY time;""")

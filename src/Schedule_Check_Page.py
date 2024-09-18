@@ -76,28 +76,28 @@ class Schedule_Check_Page:
         if check_type == 'Metadata Check':
             type = 'METADATA'
             table_data = st.session_state.metadata_table.split(".")
-            st.write(table_data)
+            # st.write(table_data)
             db = table_data[0]
             schema = table_data[1]
             table = table_data[2]
             column_jsons = st.session_state.metadata_spec
             specs = column_jsons
-            proc = "QC_TESTING.QC.METADATA_QUALITY"
+            proc = "DATA_QUALITY.CONFIG.METADATA_QUALITY"
             for json in column_jsons:
-                sql = f"insert into QC_TESTING.QC.control_report (object_var,active_flg) select parse_json('{json}'),true"
+                sql = f"insert into DATA_QUALITY.CONFIG.control_report (object_var,active_flg) select parse_json('{json}'),true"
                 sql_to_dataframe(sql)
 
             user = st.experimental_user
             task = f"""CREATE OR REPLACE TASK {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.{name}_DQ_TASK
                 SCHEDULE = 'USING CRON {freq} UTC'
-                WAREHOUSE = '{warehouse}'
+                USER_TASK_MANAGED_INITIAL_WAREHOUSE_SIZE = '{warehouse}'
                 COMMENT = 'sit_data_quality_framework'
                 AS
-                CALL QC_TESTING.QC.METADATA_QUALITY('{db}', '{schema}', '{table}')
+                CALL DATA_QUALITY.CONFIG.METADATA_QUALITY('{db}', '{schema}', '{table}')
                 """
             insert_query = f"""insert into {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.DQ_JOBS (JOB_NAME,CREATE_DTTM,CREATE_BY,LAST_RUN,SCHEDULE,JOB_SPECS,LAST_UPDATED,LABEL,IS_ACTIVE,SPROC_NAME,CHECK_CATEGORY) SELECT '{name}',CURRENT_TIMESTAMP(),'{user['user_name']}',CURRENT_TIMESTAMP(),'{freq}',PARSE_JSON('{{"LOCATION":"CONTROL_REPORT"}}'),CURRENT_TIMESTAMP(),'{label}','True','{proc}','{type}'"""
 
-            st.write(insert_query)
+            # st.write(insert_query)
             sql_to_dataframe(insert_query)
             sql_to_dataframe(task)
             if st.session_state.schedule_job:
@@ -106,7 +106,7 @@ class Schedule_Check_Page:
         elif check_type == "Native Snowflake Checks":
             specs = st.session_state.snowflake_dmf_specs
             type = "SNOWFLAKE_DMF"
-            proc = "QC_TESTING.QC.DMF_WRAPPER"
+            proc = "DATA_QUALITY.CONFIG.DMF_WRAPPER"
 
             user = st.experimental_user
             specs = str(specs).replace("'","\\'")
@@ -118,7 +118,7 @@ class Schedule_Check_Page:
             id = sql_to_dataframe(f"SELECT JOB_ID from {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.DQ_JOBS WHERE JOB_NAME = '{name}'")[0][0]
             task = f"""CREATE OR REPLACE TASK {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.{name}_DQ_TASK
                 SCHEDULE = 'USING CRON {freq} UTC'
-                WAREHOUSE = '{warehouse}'
+                USER_TASK_MANAGED_INITIAL_WAREHOUSE_SIZE = '{warehouse}'
                 COMMENT = 'sit_data_quality_framework'
                 AS
                 CALL {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.DMF_WRAPPER('{id}')
@@ -162,7 +162,7 @@ class Schedule_Check_Page:
             id = sql_to_dataframe(f"SELECT JOB_ID from {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.DQ_JOBS WHERE JOB_NAME = '{name}'")[0][0]
             task = f"""CREATE OR REPLACE TASK {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.{name}_DQ_TASK
                 SCHEDULE = 'USING CRON {freq} America/Vancouver'
-                WAREHOUSE = '{warehouse}'
+                USER_TASK_MANAGED_INITIAL_WAREHOUSE_SIZE = '{warehouse}'
                 COMMENT = 'sit_data_quality_framework'
                 AS
                 CALL {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.{proc}('{name}',{{}})
@@ -186,7 +186,7 @@ class Schedule_Check_Page:
         if "scan_schema" not in st.session_state:
             st.session_state.scan_schema = False
 
-        if check_type == "Native Snowflake Checks" or st.session_state.scan_schema == False:
+        if check_type == "Native Snowflake Checks" or st.session_state.scan_schema == True:
             unmanaged_check = st.checkbox("Schedule check directly on table")
         else:
             unmanaged_check = False
@@ -246,8 +246,8 @@ class Schedule_Check_Page:
             if b1.button("Save",type="primary", on_click=self.save_and_create_check, args = (check_name,frequency,check_label,warehouse), disabled=(False if check_name else True)):
                 st.success(f":white_check_mark: Check {check_name} saved successfully")
                 time.sleep(5)
-                # change_page("not_page")
-                change_page("table_metrics")
+                change_page("not_page")
+                # change_page("table_metrics")
                 st.experimental_rerun()
     
     def print_sidebar(self):

@@ -94,7 +94,7 @@ CREATE OR REPLACE TABLE DATA_QUALITY.CONFIG.analysis
 ) CHANGE_TRACKING = TRUE;
 
 -- ************************************** control_report_result
-CREATE OR REPLACE TABLE DATA_QUALITY.RESULTS.control_report_result
+CREATE OR REPLACE TABLE DATA_QUALITY.RESULTS.
 (
  control_report_result_id   number NOT NULL AUTOINCREMENT START 1 INCREMENT 1 ORDER,
  control_report_id          number NOT NULL,
@@ -121,7 +121,7 @@ select cr.control_report_id,
        cr.object_var:c_name::string as column_name,
        cr.object_var:c_datatype::string as datatype,
        cr.active_flg as active_flg
-from control_report cr;
+from DATA_QUALITY.CONFIG.control_report cr;
 
 create or replace view DATA_QUALITY.CONFIG.sql_control_report_vw as
 select database_name,
@@ -129,7 +129,7 @@ select database_name,
        table_name,
        listagg(column_name,',') within group (order by control_report_id) as columns,
        listagg(control_report_id,',') within group (order by control_report_id) as control_report_id
-from control_report_vw cr
+from DATA_QUALITY.CONFIG.control_report_vw cr
 where active_flg = True
 group by 1,2,3;
 
@@ -148,17 +148,23 @@ def dmf_wrapper(session, id):
     spec = session.sql(sql_string).collect()
     spec =  json.loads(spec[0][0])
     result_json={}
+    a_flag = 0
+    table = spec["TABLE"]
+    if spec["COUNT_CHECK"]:
+        row_count = session.sql(f"SELECT COUNT(*) as COUNT FROM {table}").to_pandas()
+        result_json["row_count"] = row_count["COUNT"].values[0]
     for column_spec in spec["COLUMNS"]:
         column = str(column_spec["COLUMN"])
-        table = spec["TABLE"]
         result_json[column] = {}
-        for check in column_spec["CHECKS"]:
+        for index,check in enumerate(column_spec["CHECKS"]):
             check_query = f'SELECT SNOWFLAKE.CORE.{check}(SELECT {column} from {table}) as RESULT'
             result = session.sql(check_query).to_pandas()
             result_json[column][check]=result["RESULT"].values[0]
+            if result_json[column][check] >= int(column_spec["THRESHOLDS"][index]):
+            	a_flag = 1
     result_json = str(result_json).replace("'",'"')
     session.sql(f"""insert into DATA_QUALITY.RESULTS.DQ_SNOWFLAKE_DMF_RESULTS(JOB_ID,RUN_DATETIME,RESULTS,ALERT_FLAG,ALERT_STATUS,COMMENTS) 
-    SELECT {id},CURRENT_TIMESTAMP(),PARSE_JSON('{result_json}'),0,'CONFIRMATION_PENDING',''""").collect()
+    SELECT {id},CURRENT_TIMESTAMP(),PARSE_JSON('{result_json}'),{a_flag},'pending review',''""").collect()
     return result_json
 $$;
 
@@ -193,12 +199,12 @@ BEGIN
     control_report_run_id := record.control_report_run_id;
   END FOR;
 
-  let query VARCHAR DEFAULT ''SELECT * FROM qc.control_report_vw WHERE database_name = ? AND schema_name = ? AND table_name = ? AND active_flg = True'';
+  let query VARCHAR DEFAULT ''SELECT * FROM DATA_QUALITY.CONFIG.control_report_vw WHERE database_name = ? AND schema_name = ? AND table_name = ? AND active_flg = True'';
   
   let rs RESULTSET := (EXECUTE IMMEDIATE :query USING (database_name, schema_name, table_name));
   let c1 CURSOR FOR rs;
 
-  let insert_query := ''insert into control_report_result (control_report_id, control_report_run_id, column_value, column_cnt)
+  let insert_query := ''insert into DATA_QUALITY.RESULTS.control_report_result (control_report_id, control_report_run_id, column_value, column_cnt)
                       '';
 
   let cte_query := ''with x as (
@@ -259,7 +265,7 @@ IMPORTS = ('@DATA_QUALITY.CONFIG.CODE/utility_functions_non_stat.py','@DATA_QUAL
 EXECUTE AS OWNER
 ;
 
-CREATE OR REPLACE STREAMLIT  DATA_QUALITY.CONFIG.DQ_TEST
+CREATE OR REPLACE STREAMLIT  DATA_QUALITY.CONFIG.DATA_QUALITY_MANAGER
 ROOT_LOCATION = '@DATA_QUALITY.CONFIG.CODE'
 MAIN_FILE = '/streamlit_app.py'
 QUERY_WAREHOUSE = DEX_WH

@@ -34,12 +34,15 @@ class NotificationPage(Page):
             type = note[6]
             if read is 'pending review':
                 self.read_note(id,type)
+    
     def read_note(self,note_id, note_type):
         session = st.session_state.session
         if note_type == 'ANOMOLY':
             sql_str = f"UPDATE {APP_OPP_DB}.{APP_RESULTS_SCHEMA}.DQ_ANOMALY_DETECT_RESULTS SET ALERT_STATUS = 'READ' WHERE (JOB_ID||'_'||RUN_DATETIME) = '{note_id}'"
         elif note_type == 'NON-STAT':
             sql_str = f"UPDATE {APP_OPP_DB}.{APP_RESULTS_SCHEMA}.DQ_NON_STAT_CHECK_RESULTS SET ALERT_STATUS = 'READ' WHERE (JOB_ID||'_'||RUN_DATETIME) = '{note_id}'"
+        elif note_type == 'SNOWFLAKE_DMF':
+            sql_str = f"UPDATE {APP_OPP_DB}.{APP_RESULTS_SCHEMA}.DQ_SNOWFLAKE_DMF_RESULTS SET ALERT_STATUS = 'READ' WHERE (JOB_ID||'_'||RUN_DATETIME) = '{note_id}'"
         sql_to_dataframe(sql_str)
 
     def save_edits(self, df, table):
@@ -103,15 +106,17 @@ class NotificationPage(Page):
             job_id_f = list(job_info[job_info["JOB_NAME"] == job_name]["JOB_ID"])[0]
             alert_flag = ''
             alert_field = ', IFF(SUM(ALERT_FLAG)>0, 1, 0) AS ALERT_FLAG'
+            dmf_alert_field = ''
             alert_grouper = ''
             emoji_flag = True
         else:
             job_id_f = '%%'
             alert_flag = 'and ALERT_FLAG = 1'
             alert_field = ', ALERT_FLAG'
+            dmf_alert_field = ', IFF(ALERT_FLAG, 1, 0) as ALERT_FLAG'
             alert_grouper = alert_field
             emoji_flag = False
-        notifications = sql_to_dataframe(
+        notifications = (
             f"""SELECT (JOB_ID||'_'||RUN_DATETIME) AS RUN_KEY ,JOB_ID, RUN_DATETIME, COUNT(*), CHECK_TBL_NM {alert_field}, 'ANOMOLY' as CHECK_TYPE, ALERT_STATUS 
                 FROM {APP_OPP_DB}.{APP_RESULTS_SCHEMA}.DQ_ANOMALY_DETECT_RESULTS M 
                 WHERE CHECK_TBL_NM ILIKE '%{search}%'
@@ -130,9 +135,19 @@ class NotificationPage(Page):
                 and (ALERT_STATUS {show})
                 AND RUN_DATETIME >= CONCAT('{start_date}', ' 00:00:00')
                 AND RUN_DATETIME <= CONCAT('{end_date}', ' 23:59:59')
+                GROUP BY JOB_ID,CONTROL_TBL_NM,RUN_DATETIME {alert_grouper}, ALERT_STATUS
+                UNION
+                SELECT (JOB_ID||'_'||RUN_DATETIME) AS RUN_KEY ,JOB_ID, RUN_DATETIME, COUNT(*), '' as CONTROL_TBL_NM {dmf_alert_field}, 'SNOWFLAKE_DMF' as CHECK_TYPE, ALERT_STATUS 
+                FROM {APP_OPP_DB}.{APP_RESULTS_SCHEMA}.DQ_SNOWFLAKE_DMF_RESULTS M 
+                WHERE CONTROL_TBL_NM ILIKE '%{search}%'
+                and JOB_ID ilike '{job_id_f}'
+                {alert_flag}
+                and (ALERT_STATUS {show})
+                AND RUN_DATETIME >= CONCAT('{start_date}', ' 00:00:00')
+                AND RUN_DATETIME <= CONCAT('{end_date}', ' 23:59:59')
                 GROUP BY JOB_ID,CONTROL_TBL_NM,RUN_DATETIME {alert_grouper}, ALERT_STATUS order by ALERT_STATUS DESC, RUN_DATETIME DESC 
                 """)
-        # st.write("#")
+        notifications = sql_to_dataframe(notifications)
         st.button("Mark all as read", type="primary", on_click=self.read_all_notes, args=(notifications,))
         st.write("-----")
         # st.write(notifications)
