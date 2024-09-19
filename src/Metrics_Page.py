@@ -37,14 +37,26 @@ class MetricsPage(BasePage):
                             data_dict[spec["COLUMN"]][check] = []
                     
                     times = []
-         
+                    row_counts = []
                     for index, row in results.iterrows():
                         times.append(row["RUN_DATETIME"])
                         results_dict = json.loads(row["RESULTS"])
+                        if "row_count" in results_dict:
+                            row_counts.append(results_dict["row_count"])
+                            del results_dict["row_count"]
+
                         for column, checks in results_dict.items():
                             for check_name,value in checks.items():
                                 data_dict[column][check_name].append(value)
                             
+                    if len(row_counts) > 0:
+                        st.subheader("Row Count Over Time")
+                        rc_json = {}
+                        rc_json["TIME"] = times
+                        rc_json["ROW_COUNT"] = row_counts
+                        df = pd.DataFrame(rc_json)
+                        st.line_chart(df, x="TIME", y="ROW_COUNT")
+                        st.divider()
 
                     columns = data_dict.keys()
                     chosen_column = st.selectbox("Column",columns, key=f"{job_id}_column_selector")
@@ -52,7 +64,7 @@ class MetricsPage(BasePage):
                         checks = data_dict[chosen_column].keys()
                         display_check = st.selectbox("Check", checks, key=f"{job_id}_check_selector")
                         if display_check:
-                            st.write(f"{display_check} of {chosen_column} over time")
+                            st.subheader(f"{display_check} of {chosen_column} over time")
                             df_json = {}
                             df_json["TIME"] = times
                             df_json[display_check] = data_dict[chosen_column][display_check]
