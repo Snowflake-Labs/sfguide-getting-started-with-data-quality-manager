@@ -94,7 +94,7 @@ CREATE OR REPLACE TABLE DATA_QUALITY.CONFIG.analysis
 ) CHANGE_TRACKING = TRUE;
 
 -- ************************************** control_report_result
-CREATE OR REPLACE TABLE DATA_QUALITY.RESULTS.
+CREATE OR REPLACE TABLE DATA_QUALITY.RESULTS.control_report_result
 (
  control_report_result_id   number NOT NULL AUTOINCREMENT START 1 INCREMENT 1 ORDER,
  control_report_id          number NOT NULL,
