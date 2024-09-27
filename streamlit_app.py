@@ -82,7 +82,6 @@ session = st.session_state.session
 
 st.title("Data Quality Manager")
 
-st.session_state.databases.append(APP_OPP_DB)
 
 if "catalog_info" not in st.session_state:
     with st.spinner("Loading Catalog"):
