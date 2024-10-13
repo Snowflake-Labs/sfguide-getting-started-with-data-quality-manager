@@ -1,7 +1,7 @@
 CREATE DATABASE DATA_QUALITY;
-CREATE SCHEMA DATA_QUALITY.CONFIG;
-CREATE SCHEMA DATA_QUALITY.RESULTS;
-CREATE SCHEMA DATA_QUALITY.TEMPORARY_DQ_OBJECTS;
+CREATE or replace SCHEMA DATA_QUALITY.CONFIG;
+CREATE or replace SCHEMA DATA_QUALITY.RESULTS;
+CREATE or replace SCHEMA DATA_QUALITY.TEMPORARY_DQ_OBJECTS;
 
 create or replace TABLE DATA_QUALITY.CONFIG.DQ_CHECK_TYPES (
 	CHECK_TYPE_ID NUMBER(38,0),
@@ -267,6 +267,23 @@ EXECUTE AS OWNER
 
 -- stage for registering temp UDFs
 CREATE OR REPLACE STAGE DATA_QUALITY.TEMPORARY_DQ_OBJECTS.CODE;
+
+create or replace warehouse DEX_WH
+with
+	warehouse_type='STANDARD'
+	warehouse_size='X-Small'
+	max_cluster_count=1
+	min_cluster_count=1
+	scaling_policy=STANDARD
+	auto_suspend=600
+	auto_resume=TRUE
+	initially_suspended=TRUE
+	enable_query_acceleration=FALSE
+	query_acceleration_max_scale_factor=8
+	max_concurrency_level=8
+	statement_queued_timeout_in_seconds=0
+	statement_timeout_in_seconds=172800
+;
 
 CREATE OR REPLACE STREAMLIT  DATA_QUALITY.CONFIG.DATA_QUALITY_MANAGER
 ROOT_LOCATION = '@DATA_QUALITY.CONFIG.CODE'
