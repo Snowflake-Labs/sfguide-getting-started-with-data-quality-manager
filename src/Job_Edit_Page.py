@@ -53,7 +53,7 @@ class Job_Edit_Page(Page):
         if edit_name == check_name:
             session.sql(f"alter task {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.{check_name}_DQ_TASK SUSPEND;").collect()
             session.sql(f"""
-            ALTER TASK {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.{check_name}_DQ_TASK SET SCHEDULE = 'USING CRON {frequency} America/Vancouver', WAREHOUSE = '{warehouse}', comment = "{check_label}";
+            ALTER TASK {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.{check_name}_DQ_TASK SET SCHEDULE = 'USING CRON {frequency} America/Vancouver', USER_TASK_MANAGED_INITIAL_WAREHOUSE_SIZE = '{warehouse}', comment = "sit_data_quality_framework";
             """).collect()
             if st.session_state.start_edited_task:
                 session.sql(f"alter task {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.{check_name}_DQ_TASK RESUME;").collect()
@@ -67,11 +67,12 @@ class Job_Edit_Page(Page):
             session.sql(f"DROP TASK IF EXISTS {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.{check_name}_DQ_TASK").collect()
             task = f"""CREATE OR REPLACE TASK {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.{edit_name}_DQ_TASK
             SCHEDULE = 'USING CRON {frequency} America/Vancouver'
-            WAREHOUSE = '{warehouse}'
+            USER_TASK_MANAGED_INITIAL_WAREHOUSE_SIZE = '{warehouse}'
+            comment = 'sit_data_quality_framework'
             AS
             CALL {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.{job_proc}('{edit_name}',{{}})
             """
-            # st.write(task)
+            st.write(task)
             session.sql(task).collect()
             session.sql(f"""
             UPDATE {APP_OPP_DB}.{APP_CONFIG_SCHEMA}.DQ_JOBS
@@ -135,7 +136,7 @@ class Job_Edit_Page(Page):
                 st.button("Stop",type="primary", on_click = self.toggle_task, args = (check_name,"STOP"))
                 st.session_state.start_edited_task = True
 
-            edit_name = st.text_input("Job Name", value = job[1])
+            edit_name = st.text_input("Job Name", value = job[1], disabled=True)
             warehouse = st.selectbox("Warehouse", st.session_state.warehouses)
             one,two = st.columns(2)
             freq_list = list(dates_chron_dict.keys())
