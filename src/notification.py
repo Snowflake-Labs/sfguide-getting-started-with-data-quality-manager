@@ -106,7 +106,7 @@ class NotificationPage(Page):
             job_id_f = list(job_info[job_info["JOB_NAME"] == job_name]["JOB_ID"])[0]
             alert_flag = ''
             alert_field = ', IFF(SUM(ALERT_FLAG)>0, 1, 0) AS ALERT_FLAG'
-            dmf_alert_field = ''
+            dmf_alert_field = ', IFF(SUM(IFF(ALERT_FLAG, 1, 0))>0, 1, 0) AS ALERT_FLAG'
             alert_grouper = ''
             emoji_flag = True
         else:
@@ -147,6 +147,7 @@ class NotificationPage(Page):
                 AND RUN_DATETIME <= CONCAT('{end_date}', ' 23:59:59')
                 GROUP BY JOB_ID,CONTROL_TBL_NM,RUN_DATETIME {alert_grouper}, ALERT_STATUS order by ALERT_STATUS DESC, RUN_DATETIME DESC 
                 """)
+        # st.write(notifications)
         notifications = sql_to_dataframe(notifications)
         st.button("Mark all as read", type="primary", on_click=self.read_all_notes, args=(notifications,))
         st.write("-----")

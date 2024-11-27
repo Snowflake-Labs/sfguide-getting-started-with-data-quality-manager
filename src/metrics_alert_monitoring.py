@@ -228,6 +228,14 @@ class table_metrics(Page):
             st.divider()
 
         with t2:
+
+            allowed_metrics = [
+            "NULL_COUNT",
+            "NULL_PERCENT",
+            "BLANK_COUNT",
+            "BLANK_PERCENT",
+            "DUPLICATE_COUNT"]
+            
             def data_metric_scan(table,metric,column):
                 return session.sql(f"""
                 SELECT *
