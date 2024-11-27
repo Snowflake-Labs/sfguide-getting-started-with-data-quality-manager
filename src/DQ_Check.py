@@ -339,6 +339,8 @@ class DQCheckPage(Page):
                         checks.append("UNIQUE_COUNT")
                         thresholds.append(uc_t)
 
+                    thresholds = [0 for threshold in thresholds if threshold == "Threshold"]
+
                     specs["COLUMNS"].append({"COLUMN":column, "CHECKS":checks, "THRESHOLDS":thresholds})
 
 
