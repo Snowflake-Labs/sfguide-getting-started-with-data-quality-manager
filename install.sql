@@ -272,4 +272,4 @@ CREATE OR REPLACE STREAMLIT  DATA_QUALITY.CONFIG.DATA_QUALITY_MANAGER
 ROOT_LOCATION = '@DATA_QUALITY.CONFIG.CODE'
 MAIN_FILE = '/streamlit_app.py'
 QUERY_WAREHOUSE = DEX_WH
-COMMENT = 'sit_data_quality_framework';
+COMMENT = '{"origin": "sf_sit","name": "sit_data_quality_framework","version": "{major: 1, minor: 0}"}';
