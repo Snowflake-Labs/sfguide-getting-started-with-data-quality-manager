@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
+import json
 import time
 
 from src.Page import Page
@@ -23,6 +24,10 @@ class table_metrics(Page):
         col_h1.subheader('Data Metrics Monitoring')
         if col_h3.button('↻'):
                 st.rerun()
+
+        with st.expander("Raw Results"):
+                dmf_results = session.sql("SELECT * FROM SNOWFLAKE.LOCAL.DATA_QUALITY_MONITORING_RESULTS").to_pandas()
+                st.dataframe(dmf_results)
 
         t1,t2 = st.tabs(("Metrics Monitoring","Metric Scan Results"))
         with t1:
@@ -235,7 +240,7 @@ class table_metrics(Page):
             "BLANK_COUNT",
             "BLANK_PERCENT",
             "DUPLICATE_COUNT"]
-            
+
             def data_metric_scan(table,metric,column):
                 return session.sql(f"""
                 SELECT *
@@ -246,9 +251,7 @@ class table_metrics(Page):
                   ));
                 """).collect()
 
-            dmf_results = session.sql("SELECT * FROM SNOWFLAKE.LOCAL.DATA_QUALITY_MONITORING_RESULTS").to_pandas()
 
-            st.write(dmf_results)
 
             tables = dmf_results["TABLE_NAME"].unique()
             chosen_table = st.selectbox("Select Table", tables)
